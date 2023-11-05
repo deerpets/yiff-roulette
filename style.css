@@ -1,3 +1,25 @@
+input[type="radio"] {
+    display: none;
+}
+
+input[type="radio"][name="vote-choice"]:checked+label {
+    background: red;
+}
+
+input[type="text"].invalid {
+    border: 1px red solid;
+}
+
+.hide {
+    display: none;
+}
+
+section {
+    background: #1c3780;
+}
+
+/* old css below */
+
 body {
     font-family: Arial, sans-serif;
     background-color: #1a1a2e;

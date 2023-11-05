@@ -22,7 +22,10 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const roomsRef = collection(db, "rooms");
-const room_code_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+// A-Za-z0-9, but with confusing symbols removed (i.e. o, O, and 0 look similar and are
+// thus all removed)
+const room_code_alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
 const room_code_length = 5;
 
 function generateRoomCode() {
@@ -37,6 +40,8 @@ function generateRoomCode() {
 }
 
 function isValidRoomCode(room_code) {
+    // Regex could do this in like two lines, but this way we keep our room code alphabet
+    // const forcefully synced with the actual validation.
     if (room_code.length !== room_code_length) {
         return false;
     }
@@ -92,75 +97,74 @@ async function createRoom() {
     return { success: false, message: `Failed to find an unused room code after ${max_tries} attempts.` };
 }
 
+function getVoteChoice() {
+    const choices = document.querySelectorAll('input[name="vote-choice"]');
+    for (const choice of choices) {
+        if (choice.checked) {
+            return choice.id; // or choice.value if you set value attributes to your inputs
+        }
+    }
+    return null; // in case no button is selected
+}
+
 window.createRoom = createRoom;
 window.generateRoomCode = generateRoomCode;
-// const app = firebase.initializeApp(firebaseConfig);
-// const db = firebase.firestore()
-// db.collection("rooms").doc("abcde").get().then((snap) => { console.log(snap.data()) })
+window.getVoteChoice = getVoteChoice;
 
-let entries = [];
-let currentEntry = -1;
+let lobby;
+let submission;
+let round;
+let game_results;
 
-function addEntry() {
-    let name = document.getElementById('name').value;
-    let url = document.getElementById('url').value;
+window.addEventListener("DOMContentLoaded", () => {
+    lobby = document.getElementById("lobby");
+    lobby.code_entry = document.getElementById("code-entry");
+    lobby.join_button = document.getElementById("join-room")
+    submission = document.getElementById("submission");
+    round = document.getElementById("round");
+    round.ballot = document.getElementById("ballot");
+    round.result = document.getElementById("round-result");
+    game_results = document.getElementById("game-results");
 
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        url = 'https://' + url;
-    }
+    // Bind the lobby UI:
+    document.getElementById("create-room").addEventListener("click", () => {
+        console.log("create room");
+        showPage(submission);
+    });
 
-    if (name && url) {
-        entries.push({ name, url });
-        document.getElementById('name').value = '';
-        document.getElementById('url').value = '';
-    }
-}
+    // Bind the submission UI
+    document.getElementById("confirm-submission").addEventListener("click", () => {
+        console.log("submitted");
+        showPage(round.ballot);
+    });
 
-function startGame() {
-    if (entries.length === 0) {
-        alert('Please add at least one entry.');
-        return;
-    }
+    lobby.code_entry.addEventListener("input", onCodeEntryInput);
 
-    document.getElementById('inputForm').style.display = 'none';
-    document.getElementById('results').style.display = 'block';
-    shuffle(entries);
-    showNextEntry();
-}
-
-function showNextEntry() {
-    if (currentEntry + 1 < entries.length) {
-        currentEntry += 1;
-        document.getElementById('displayName').textContent = '?';
-        document.getElementById('nextbtn').disabled = true;
-    } else {
-        alert('Game Over!');
-    }
-}
-
-function openLink() {
-    window.open(entries[currentEntry].url, '_blank');
-}
-
-function revealName() {
-    document.getElementById('displayName').textContent = entries[currentEntry].name;
-    document.getElementById('nextbtn').disabled = false;
-}
-
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-}
-
-/*  fetch('https://e621.net/posts/4394630.json')
-.then(response => response.json())
-.then(data => {
-  // Process and display the data in your app
-  console.log(data);
+    // In case the browser autofills something at pageload, we want to make sure
+    // the code entry is properly handled.
+    onCodeEntryInput();
 })
-.catch(error => {
-  // Handle any errors
-  console.error('Error fetching data: ', error);
-}); */
+
+function onCodeEntryInput() {
+    let code_text = lobby.code_entry.value;
+    let valid = isValidRoomCode(code_text);
+
+    lobby.join_button.disabled = !valid;
+    lobby.code_entry.classList.toggle("invalid", !valid);
+}
+
+function showPage(page) {
+    lobby.classList.add("hide");
+    submission.classList.add("hide");
+    round.classList.add("hide");
+    round.ballot.classList.add("hide");
+    round.result.classList.add("hide");
+
+    game_results.classList.add("hide");
+
+    page.classList.remove("hide");
+
+    // the voting and results pages are subpages of `round`. This
+    // shim ensures that `round` is displayed when a subpage is shown.
+    page.parentElement.classList.remove("hide");
+}

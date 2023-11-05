@@ -4,29 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Guessing Game</title>
+    <title>Yiff Roulette</title>
     <link href="./style.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
+    <header>yiff roulette</header>
 
-    <div id="inputForm">
-        <label for="name">Name:</label>
-        <input type="text" id="name" placeholder="Enter your name">
-        <label for="url">URL:</label>
-        <input type="text" id="url" placeholder="Enter a website URL">
+    <section id="lobby">
         <div>
-            <button onclick="addEntry()">Add Entry</button>
-            <button onclick="startGame()">Finished</button>
+            <button id="create-room">Create a Room</button>
         </div>
-    </div>
+        <div>or</div>
+        <div>
+            <input type="text" id="code-entry" placeholder="doE69">
+            <button id="join-room" disabled>Join With a Room Code</button>
+        </div>
+    </section>
 
-    <div id="results">
-        <button onclick="openLink()">Open Link</button>
-        <button onclick="revealName()">Show Name</button>
-        <button id="nextbtn" onclick="showNextEntry()" disabled>Next</button>
-        <p>Entered by: <span id="displayName"></span></p>
-    </div>
+    <section id="submission" class="hide">
+        Submit the URL of the e621 post you like best with the specified tag.
+        <input type="text" id="link-entry" placeholder="e621.net/posts/1234567">
+        <button id="confirm-submission">Submit</button>
+    </section>
+
+    <section id="round" class="hide">
+        <div id="ballot">
+            <!-- need to be interleaved to allow css to style selected -->
+            <img src="" alt="">
+            <input type="radio" name="vote-choice" id="vc1">
+            <label for="vc1">
+                <div>choice 1</div>
+            </label>
+
+            <input type="radio" name="vote-choice" id="vc2">
+            <label for="vc2">
+                <div>choice 2</div>
+            </label>
+
+            <input type="radio" name="vote-choice" id="vc3">
+            <label for="vc3">
+                <div>choice 3</div>
+            </label>
+        </div>
+
+        <div id="round-result">
+            <div>
+                It was <span id="whodunnit"></span>!
+            </div>
+
+            <div>
+                Your score is now <span id="score"></span>.
+            </div>
+        </div>
+    </section>
+
+    <section id="game-results" class="hide">player 2 had the high score</section>
+
+    <footer>made by blah blah, github, </footer>
     <!-- <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script> -->
     <script type="module" src="./app.js"></script>
