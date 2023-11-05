@@ -4,6 +4,9 @@
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+
 // Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAziDznLeAce4jycosDFPySUb5EQx9I9CM",
@@ -15,9 +18,85 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore()
-db.collection("rooms").doc("abcde").get().then((snap) => { console.log(snap.data()) })
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const roomsRef = collection(db, "rooms");
+const room_code_alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+const room_code_length = 5;
+
+function generateRoomCode() {
+    const alphabet_length = room_code_alphabet.length;
+    let result = '';
+
+    for (let i = 0; i < room_code_length; i++) {
+        result += room_code_alphabet.charAt(Math.floor(Math.random() * alphabet_length));
+    }
+
+    return result;
+}
+
+function isValidRoomCode(room_code) {
+    if (room_code.length !== room_code_length) {
+        return false;
+    }
+
+    for (let char of room_code) {
+        if (!room_code_alphabet.includes(char)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function setRoomCodeCookie(room_code) {
+    const now = new Date();
+    now.setTime(now.getTime() + (24 * 60 * 60 * 1000)); // Set the expiry time to 24 hours from now
+    const expires = "expires=" + now.toUTCString();
+
+    document.cookie = "room_code=" + room_code + ";" + expires + ";path=/";
+}
+
+// Usage
+setRoomCodeCookie('yourRoomCodeHere');
+
+
+async function createRoom() {
+    const max_tries = 5;
+    let room_code;
+
+    for (let i = 0; i < max_tries; i++) {
+        room_code = generateRoomCode();
+
+        try {
+            const room_snap = await getDoc(doc(roomsRef, room_code));
+            if (room_snap.exists()) {
+                continue; // Skip to the next iteration and try a new room code.
+            }
+        } catch (error) {
+            return { success: false, message: 'Failed to check if a room code was already used.', error };
+        }
+
+        try {
+            await setDoc(doc(roomsRef, room_code), {
+                players: ["current player"],
+                createdTime: serverTimestamp()
+            });
+            return { success: true, room_code: room_code }; // Success
+        } catch (error) {
+            return { success: false, message: 'Failed to create room despite having an available room code.', error };
+        }
+    }
+
+    return { success: false, message: `Failed to find an unused room code after ${max_tries} attempts.` };
+}
+
+window.createRoom = createRoom;
+window.generateRoomCode = generateRoomCode;
+// const app = firebase.initializeApp(firebaseConfig);
+// const db = firebase.firestore()
+// db.collection("rooms").doc("abcde").get().then((snap) => { console.log(snap.data()) })
 
 let entries = [];
 let currentEntry = -1;
