@@ -2,8 +2,14 @@
     /* text-n is the nth faded out text color (1 is normal, 2 is faded, ...) */
     --text-1: #d1d1d1;
 
+    --text-error: red;
+
     /* bg-n is the nth background color for nesting (1 is page bg, 2 is panel, 3 is panel in panel, ...) */
     --bg-1: #1a1a2e;
+
+    --bg-selected: #1b67dd;
+
+    --pad: 0.4rem;
 }
 
 * {
@@ -24,7 +30,7 @@ body {
     /* height: 100vh; */
     /* align-items: center; */
     /* justify-content: center; */
-    padding: 10px;
+    padding: var(--pad);
     margin: 0;
     /* padding: 0; */
 }
@@ -41,11 +47,11 @@ input[type="radio"] {
 }
 
 input[type="radio"][name="vote-choice"]:checked+label {
-    background: red;
+    background: var(--bg-selected);
 }
 
 input[type="text"].invalid {
-    border: 1px red solid;
+    border: 1px var(--text-error) solid;
 }
 
 .hide {
@@ -54,6 +60,31 @@ input[type="text"].invalid {
 
 section {
     background: #1c3780;
+}
+
+#error-display {
+    height: auto;
+    padding: var(--pad);
+    transition: opacity 1s;
+    color: var(--text-error);
+}
+
+#error-display:not([open]) {
+    overflow: hidden;
+}
+
+#error-display summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 1em;
+}
+
+.no-error {
+    /* Keeps the size of the box without making it visible or interactable */
+    opacity: 0;
+    user-select: none;
+    cursor: inherit;
 }
 
 /* old css below */

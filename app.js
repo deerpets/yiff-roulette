@@ -115,8 +115,41 @@ let lobby;
 let submission;
 let round;
 let game_results;
+let error_display;
+let errorTimer;
+
+function setError(message) {
+    const prefixed_message = `Error: ${message}`;
+    console.log(prefixed_message);
+    error_display.summary.innerText = prefixed_message;
+
+    // Update the error message
+    error_display.span.innerText = message;
+
+    // If the error display is open, the user is probably looking at the
+    // error. So we don't start a timer to hide it - the toggle eventhandler
+    // will fix that when they close the error box.
+    if (!error_display.open) {
+        // Make the error box visible by removing the 'no-error' class
+        error_display.classList.remove('no-error');
+
+        // Reset the timer if it's already running
+        clearTimeout(errorTimer);
+
+        // Start a new timer
+        errorTimer = setTimeout(() => {
+            // Check if the details element is still open before hiding it
+            if (!error_display.open) {
+                error_display.classList.add('no-error');
+            }
+        }, 30000); // 30 seconds
+    }
+}
 
 window.addEventListener("DOMContentLoaded", () => {
+    error_display = document.getElementById("error-display");
+    error_display.summary = error_display.querySelector("summary");
+    error_display.span = error_display.querySelector("span");
     lobby = document.getElementById("lobby");
     lobby.code_entry = document.getElementById("code-entry");
     lobby.join_button = document.getElementById("join-room")
@@ -125,6 +158,20 @@ window.addEventListener("DOMContentLoaded", () => {
     round.ballot = document.getElementById("ballot");
     round.result = document.getElementById("round-result");
     game_results = document.getElementById("game-results");
+
+    // Don't hide the error message if the user inspects it
+    error_display.addEventListener('toggle', () => {
+        // Clear the existing timer when the error is viewed
+        clearTimeout(errorTimer);
+
+        console.log(error_display.open)
+        if (!error_display.open) {
+            // If the details has been closed, start a new timer to wait for an extra 10 seconds
+            errorTimer = setTimeout(() => {
+                error_display.classList.add('no-error');
+            }, 10000); // 10 seconds (they explicitly closed it, so we don't wait as long)
+        }
+    });
 
     // Bind the lobby UI:
     document.getElementById("create-room").addEventListener("click", () => {
@@ -168,3 +215,5 @@ function showPage(page) {
     // shim ensures that `round` is displayed when a subpage is shown.
     page.parentElement.classList.remove("hide");
 }
+
+window.setError = setError;
