@@ -11,59 +11,62 @@
 <body>
     <header>yiff roulette</header>
 
-    <section id="lobby">
-        <div>
-            <button id="create-room">Create a Room</button>
-        </div>
-        <div>or</div>
-        <div>
-            <input type="text" id="code-entry" placeholder="doE69">
-            <button id="join-room" disabled>Join With a Room Code</button>
-        </div>
-    </section>
-
-    <section id="submission" class="hide">
-        Submit the URL of the e621 post you like best with the specified tag.
-        <input type="text" id="link-entry" placeholder="e621.net/posts/1234567">
-        <button id="confirm-submission">Submit</button>
-    </section>
-
-    <section id="round" class="hide">
-        <div id="ballot">
-            <!-- need to be interleaved to allow css to style selected -->
-            <img src="" alt="">
-            <input type="radio" name="vote-choice" id="vc1">
-            <label for="vc1">
-                <div>choice 1</div>
-            </label>
-
-            <input type="radio" name="vote-choice" id="vc2">
-            <label for="vc2">
-                <div>choice 2</div>
-            </label>
-
-            <input type="radio" name="vote-choice" id="vc3">
-            <label for="vc3">
-                <div>choice 3</div>
-            </label>
-        </div>
-
-        <div id="round-result">
+    <main>
+        <section id="lobby">
             <div>
-                It was <span id="whodunnit"></span>!
+                <button id="create-room">Create a Room</button>
+            </div>
+            <div>or</div>
+            <div>
+                <input type="text" id="code-entry" placeholder="doE69">
+                <button id="join-room" disabled>Join With a Room Code</button>
+            </div>
+        </section>
+
+        <section id="submission" class="hide">
+            <h1 id="submission-countdown">30s</h1>
+            Submit the URL of the e621 post you like best with the specified tag.
+            <input type="text" id="link-entry" placeholder="e621.net/posts/1234567">
+            <button id="confirm-submission">Submit</button>
+        </section>
+
+        <section id="round" class="hide">
+            <div id="ballot">
+                <h1 class="countdown"><span id="ballot-countdown">30</span>s</h1>
+                <h1 class="vote-counter"><span id="ballot-vote-counter">2/5</span> players have voted</h1>
+                <!-- need to be interleaved to allow css to style selected -->
+                <img src="" alt="">
+                <input type="radio" name="vote-choice" id="vc1">
+                <label for="vc1">
+                    <div>choice 1</div>
+                </label>
+
+                <input type="radio" name="vote-choice" id="vc2">
+                <label for="vc2">
+                    <div>choice 2</div>
+                </label>
+
+                <input type="radio" name="vote-choice" id="vc3">
+                <label for="vc3">
+                    <div>choice 3</div>
+                </label>
             </div>
 
-            <div>
-                Your score is now <span id="score"></span>.
-            </div>
-        </div>
-    </section>
+            <div id="round-result">
+                <div>
+                    It was <span id="whodunnit"></span>!
+                </div>
 
-    <section id="game-results" class="hide">player 2 had the high score</section>
+                <div>
+                    Your score is now <span id="score"></span>.
+                </div>
+            </div>
+        </section>
+
+        <section id="game-results" class="hide">player 2 had the high score</section>
+    </main>
 
     <footer>made by blah blah, github, </footer>
-    <!-- <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.2/firebase-firestore-compat.js"></script> -->
     <script type="module" src="./app.js"></script>
 </body>
 
