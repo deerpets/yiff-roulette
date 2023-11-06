@@ -55,6 +55,24 @@ function isValidRoomCode(room_code) {
     return true;
 }
 
+function getCookie(name) {
+    let cookieArray = document.cookie.split(';');
+
+    for (let i = 0; i < cookieArray.length; i++) {
+        let cookiePair = cookieArray[i].split('=');
+
+        // Remove whitespace at the beginning of the cookie name
+        // and compare it with the given string
+        if (name === cookiePair[0].trim()) {
+            // Decode the cookie value and return it
+            return decodeURIComponent(cookiePair[1]);
+        }
+    }
+
+    // Return null if not found
+    return null;
+}
+
 function setRoomCodeCookie(room_code) {
     const now = new Date();
     now.setTime(now.getTime() + (24 * 60 * 60 * 1000)); // Set the expiry time to 24 hours from now
@@ -62,10 +80,6 @@ function setRoomCodeCookie(room_code) {
 
     document.cookie = "room_code=" + room_code + ";" + expires + ";path=/";
 }
-
-// Usage
-setRoomCodeCookie('yourRoomCodeHere');
-
 
 async function createRoom() {
     const max_tries = 5;
@@ -150,13 +164,19 @@ window.addEventListener("DOMContentLoaded", () => {
     error_display = document.getElementById("error-display");
     error_display.summary = error_display.querySelector("summary");
     error_display.span = error_display.querySelector("span");
+
     lobby = document.getElementById("lobby");
     lobby.code_entry = document.getElementById("code-entry");
-    lobby.join_button = document.getElementById("join-room")
+    lobby.join_button = document.getElementById("join-room");
+    lobby.create_button = document.getElementById("create-room");
+
     submission = document.getElementById("submission");
+
     round = document.getElementById("round");
+
     round.ballot = document.getElementById("ballot");
     round.result = document.getElementById("round-result");
+
     game_results = document.getElementById("game-results");
 
     // Don't hide the error message if the user inspects it
@@ -174,10 +194,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
 
     // Bind the lobby UI:
-    document.getElementById("create-room").addEventListener("click", () => {
-        console.log("create room");
-        showPage(submission);
-    });
+    lobby.create_button.addEventListener("click", onCreateRoom);
 
     // Bind the submission UI
     document.getElementById("confirm-submission").addEventListener("click", () => {
@@ -190,6 +207,8 @@ window.addEventListener("DOMContentLoaded", () => {
     // In case the browser autofills something at pageload, we want to make sure
     // the code entry is properly handled.
     onCodeEntryInput();
+
+    restoreSession();
 })
 
 function onCodeEntryInput() {
@@ -198,6 +217,28 @@ function onCodeEntryInput() {
 
     lobby.join_button.disabled = !valid;
     lobby.code_entry.classList.toggle("invalid", !valid);
+}
+
+async function onCreateRoom() {
+    // Lock the lobby UI while we try to connect:
+    lobby.create_button.disabled = true;
+    lobby.join_button.disabled = true;
+    lobby.code_entry.disabled = true;
+
+    const req = await createRoom();
+
+    if (req.success) {
+        setRoomCodeCookie(req.room_code);
+        showPage(submission);
+    } else {
+        setError(req.message);
+    }
+
+    // Restore the lobby UI now that it's hidden (or to let the user retry)
+    onCodeEntryInput();
+    lobby.create_button.disabled = true;
+    lobby.join_button.disabled = true;
+    lobby.code_entry.disabled = true;
 }
 
 function showPage(page) {
@@ -216,4 +257,29 @@ function showPage(page) {
     page.parentElement.classList.remove("hide");
 }
 
+// Check if the user is already in a room (i.e. their cookie is set to a valid
+// room code). If so, make the UI match the game state.
+async function restoreSession() {
+    const room_code = getCookie("room_code");
+    if (room_code == null) {
+        return;
+    }
+
+    if (!isValidRoomCode(room_code)) {
+        setError(`The room code in your cookie, "${room_code}", is not in the correct format. This won't cause any problems for you, but might be a bug in yiff-roulette. Clear your cookies (or wait a day) to remove this message - and <a href="https://github.com/deerpets/yiff-roulette/issues/new">open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
+        return;
+    }
+
+    const room_snap = await getDoc(doc(roomsRef, room_code));
+    if (room_snap.exists()) {
+        console.log("loading room " + room_code)
+    }
+
+    // Note: The room code cookie is only given 24 hours before it expires, and failing
+    // to load a room doesn't cause problems. There's no need to explicitly delete the
+    // cookie if it's invalid.
+}
+
 window.setError = setError;
+window.getCookie = getCookie;
+window.setRoomCodeCookie = setRoomCodeCookie;

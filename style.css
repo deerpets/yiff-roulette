@@ -77,7 +77,14 @@ section {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    height: 1em;
+    font-weight: bold;
+}
+
+#error-display span {
+    display: block;
+    /* Kind of an abuse of a span, but.. :) */
+    margin-top: var(--pad);
+    /* Needed to indicate that the error label is not the same paragraph */
 }
 
 .no-error {
