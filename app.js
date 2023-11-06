@@ -319,7 +319,9 @@ async function onCreateRoom() {
     if (req.success) {
         setRoomCodeCookie(req.room_code);
         setGame(req.room_code);
-        showPage(lobby);
+        // TODO: This is probably dumb and hacky but i don't care. this fills out the labels
+        // for room size and player count etc
+        saturateLobby(data);
     } else {
         setError(req.message);
     }
