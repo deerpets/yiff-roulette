@@ -78,7 +78,7 @@ function setRoomCodeCookie(room_code) {
     now.setTime(now.getTime() + (24 * 60 * 60 * 1000)); // Set the expiry time to 24 hours from now
     const expires = "expires=" + now.toUTCString();
 
-    document.cookie = "room_code=" + room_code + ";" + expires + ";path=/";
+    document.cookie = `room_code=${room_code};SameSite=Lax;${expires};path=/`;
 }
 
 async function createRoom() {
@@ -125,12 +125,14 @@ window.createRoom = createRoom;
 window.generateRoomCode = generateRoomCode;
 window.getVoteChoice = getVoteChoice;
 
+let menu;
 let lobby;
 let submission;
 let round;
 let game_results;
 let error_display;
 let errorTimer;
+let all_pages;
 
 function setError(message) {
     const prefixed_message = `Error: ${message}`;
@@ -161,23 +163,32 @@ function setError(message) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
-    error_display = document.getElementById("error-display");
+    const geid = document.getElementById.bind(document);
+    error_display = geid("error-display");
     error_display.summary = error_display.querySelector("summary");
     error_display.span = error_display.querySelector("span");
 
-    lobby = document.getElementById("lobby");
-    lobby.code_entry = document.getElementById("code-entry");
-    lobby.join_button = document.getElementById("join-room");
-    lobby.create_button = document.getElementById("create-room");
+    menu = geid("menu");
+    menu.code_entry = geid("code-entry");
+    menu.join_button = geid("join-room");
+    menu.create_button = geid("create-room");
+    menu.nickname = geid("nickname")
 
-    submission = document.getElementById("submission");
+    lobby = geid("lobby");
+    lobby.player_count_label = geid("lobby-player-count");
+    lobby.start_button = geid("start-game");
+    lobby.room_owner_label = geid("room-owner-label");
 
-    round = document.getElementById("round");
+    submission = geid("submission");
 
-    round.ballot = document.getElementById("ballot");
-    round.result = document.getElementById("round-result");
+    round = geid("round");
 
-    game_results = document.getElementById("game-results");
+    round.ballot = geid("ballot");
+    round.result = geid("round-result");
+
+    game_results = geid("game-results");
+
+    all_pages = [menu, lobby, submission, round, round.ballot, round.result, game_results];
 
     // Don't hide the error message if the user inspects it
     error_display.addEventListener('toggle', () => {
@@ -193,62 +204,84 @@ window.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Bind the lobby UI:
-    lobby.create_button.addEventListener("click", onCreateRoom);
+    // Bind the menu UI:
+    menu.nickname.addEventListener("input", onNicknameInput);
+    menu.create_button.addEventListener("click", onCreateRoom);
+
+    lobby.start_button.addEventListener("click", () => showPage(submission));
 
     // Bind the submission UI
-    document.getElementById("confirm-submission").addEventListener("click", () => {
+    geid("confirm-submission").addEventListener("click", () => {
         console.log("submitted");
         showPage(round.ballot);
     });
 
-    lobby.code_entry.addEventListener("input", onCodeEntryInput);
+    menu.code_entry.addEventListener("input", onCodeEntryInput);
 
     // In case the browser autofills something at pageload, we want to make sure
-    // the code entry is properly handled.
+    // the code entry is properly handled. Same for nickname and other inputs
+    onNicknameInput();
     onCodeEntryInput();
 
     restoreSession();
 })
 
-function onCodeEntryInput() {
-    let code_text = lobby.code_entry.value;
-    let valid = isValidRoomCode(code_text);
+function isNicknameValid(nickname) {
+    // TODO: check if nickname passes sanitization rules (i.e. no
+    // xss)
+    return nickname.length > 0;
+}
 
-    lobby.join_button.disabled = !valid;
-    lobby.code_entry.classList.toggle("invalid", !valid);
+function onNicknameInput() {
+    let nickname = menu.nickname.value;
+
+    if (isNicknameValid(nickname)) {
+        menu.create_button.disabled = false;
+        onCodeEntryInput();
+    } else {
+        menu.create_button.disabled = true;
+        menu.join_button.disabled = true;
+    }
+}
+
+function onCodeEntryInput() {
+    let code_text = menu.code_entry.value;
+    let valid = isValidRoomCode(code_text);
+    // The code entry should be valid if the code is valid
+    menu.code_entry.classList.toggle("invalid", !valid);
+
+    // But the user can't press the join button unless they also
+    // have a nickname
+    let nickname = menu.nickname.value;
+    menu.join_button.disabled = !(valid && isNicknameValid(nickname));
 }
 
 async function onCreateRoom() {
-    // Lock the lobby UI while we try to connect:
-    lobby.create_button.disabled = true;
-    lobby.join_button.disabled = true;
-    lobby.code_entry.disabled = true;
+    // Lock the menu UI while we try to connect:
+    menu.create_button.disabled = true;
+    menu.join_button.disabled = true;
+    menu.code_entry.disabled = true;
 
     const req = await createRoom();
 
     if (req.success) {
         setRoomCodeCookie(req.room_code);
-        showPage(submission);
+        showPage(lobby);
     } else {
         setError(req.message);
     }
 
-    // Restore the lobby UI now that it's hidden (or to let the user retry)
+    // Restore the menu UI now that it's hidden (or to let the user retry)
     onCodeEntryInput();
-    lobby.create_button.disabled = true;
-    lobby.join_button.disabled = true;
-    lobby.code_entry.disabled = true;
+    menu.create_button.disabled = true;
+    menu.join_button.disabled = true;
+    menu.code_entry.disabled = true;
 }
 
 function showPage(page) {
-    lobby.classList.add("hide");
-    submission.classList.add("hide");
-    round.classList.add("hide");
-    round.ballot.classList.add("hide");
-    round.result.classList.add("hide");
-
-    game_results.classList.add("hide");
+    all_pages.forEach(page => {
+        page.classList.add("hide");
+    });
 
     page.classList.remove("hide");
 
@@ -272,7 +305,7 @@ async function restoreSession() {
 
     const room_snap = await getDoc(doc(roomsRef, room_code));
     if (room_snap.exists()) {
-        console.log("loading room " + room_code)
+        showPage(lobby);
     }
 
     // Note: The room code cookie is only given 24 hours before it expires, and failing

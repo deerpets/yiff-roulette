@@ -16,15 +16,31 @@
     </details>
 
     <main>
-        <section id="lobby">
+        <section id="menu">
+            First, pick a nickname:
+            <input type="text" id="nickname" placeholder="handlebars 🦌">
+
+            Then
             <div>
-                <button id="create-room">Create a Room</button>
+                <button id="create-room" disabled>Create a Room</button>
             </div>
             <div>or</div>
             <div>
                 <input type="text" id="code-entry" placeholder="doE69">
                 <button id="join-room" disabled>Join With a Room Code</button>
             </div>
+        </section>
+
+        <section id="lobby" class="hide">
+            <h2 id="room-code-label">doE69</h2>
+            <span id="lobby-player-count">3</span> Players!
+            <ul>
+                <li>deer</li>
+                <li>fox</li>
+                <li>doggy</li>
+            </ul>
+            <button id="start-game">Start Game</button>
+            <div class="hide">Only <b id="room-owner-label"></b> can start the game!</div>
         </section>
 
         <section id="submission" class="hide">

@@ -81,10 +81,11 @@ section {
 }
 
 #error-display span {
-    display: block;
     /* Kind of an abuse of a span, but.. :) */
-    margin-top: var(--pad);
+    display: block;
+
     /* Needed to indicate that the error label is not the same paragraph */
+    margin-top: var(--pad);
 }
 
 .no-error {
