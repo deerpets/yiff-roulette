@@ -460,7 +460,7 @@ function saturateLobby(snap) {
     // TODO: sanitize the owner string
     lobby.room_owner_label.innerText = snap.owner;
 
-    snap.players.innerHTML = "";
+    lobby.player_list.innerHTML = "";
     snap.players.forEach(player_name => {
         const li = document.createElement("li");
         // TODO: sanitize player names
