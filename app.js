@@ -244,7 +244,7 @@ window.addEventListener("DOMContentLoaded", () => {
     menu.create_button.addEventListener("click", onCreateRoom);
     menu.join_button.addEventListener("click", onJoinRoom);
 
-    lobby.start_button.addEventListener("click", () => showPage(submission));
+    lobby.start_button.addEventListener("click", onStartGame);
 
     // Bind the submission UI
     geid("confirm-submission").addEventListener("click", () => {
@@ -283,6 +283,21 @@ function onNicknameInput() {
 async function onExitRoom() {
     if (game.unsub) {
         deleteGameCookie();
+
+        const snap = await getDoc(game.room_ref);
+        if (snap.exists()) {
+            // Transfer ownership to someone random who isn't the owner:
+            const new_owner = snap.data().players.find(name => name != game.nickname);
+            if (new_owner) {
+                await updateDoc(game.room_ref, { owner: new_owner });
+            }
+            // If new_owner is undefined, then we're the only player and so cleanup can continue
+        } else {
+            // If we can't even read the gamestate, the game is corrupt and we
+            // just leave.
+            setError(`Failed to transfer room ownership - The game you were playing in might now be corrupt. This could be caused by network issues or a bug. <a href="https://github.com/deerpets/yiff-roulette/issues/new">Open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
+        }
+
         await updateDoc(game.room_ref, { players: arrayRemove(game.nickname) });
         game.unsub();
         game.room_code = null;
@@ -433,6 +448,10 @@ async function restoreSession() {
     // cookie if it's invalid.
 }
 
+function onStartGame() {
+    // Can only be pressed if the user was the owner
+}
+
 // Sets the gamestate based on the contents of a room snap.
 function applySnap(snap) {
     switch (snap.phase) {
@@ -459,7 +478,6 @@ function saturateLobby(snap) {
 
     lobby.player_count_label.innerText = snap.players.length;
     // TODO: sanitize the owner string
-    lobby.room_owner_label.innerText = snap.owner;
 
     lobby.player_list.innerHTML = "";
     snap.players.forEach(player_name => {
@@ -469,8 +487,11 @@ function saturateLobby(snap) {
         lobby.player_list.appendChild(li);
     });
 
+    lobby.room_owner_label.innerText = snap.owner;
+
     const is_owner = game.nickname == snap.owner;
     lobby.room_owner_label.classList.toggle("hide", !is_owner);
+    lobby.start_button.classList.toggle("hide", !is_owner); // only the owner can start
 }
 
 window.setError = setError;
