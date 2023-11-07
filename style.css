@@ -51,6 +51,10 @@ input[type="radio"][name="vote-choice"]:checked+label {
     background: var(--bg-selected);
 }
 
+input[type="text"] {
+    font-size: 1em;
+}
+
 input[type="text"].invalid {
     border: 1px var(--text-error) solid;
 }
