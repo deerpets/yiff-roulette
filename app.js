@@ -5,7 +5,7 @@
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, serverTimestamp, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, serverTimestamp, onSnapshot, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -153,7 +153,8 @@ let game = {
     unsub: null,
     room_code: null,
     room_ref: null,
-    phase: "menu"
+    phase: "menu",
+    nickname: ""
 }
 
 function setError(message) {
@@ -230,7 +231,6 @@ window.addEventListener("DOMContentLoaded", () => {
         // Clear the existing timer when the error is viewed
         clearTimeout(errorTimer);
 
-        console.log(error_display.open)
         if (!error_display.open) {
             // If the details has been closed, start a new timer to wait for an extra 10 seconds
             errorTimer = setTimeout(() => {
@@ -280,12 +280,13 @@ function onNicknameInput() {
     }
 }
 
-function onExitRoom() {
+async function onExitRoom() {
     if (game.unsub) {
+        deleteGameCookie();
+        await updateDoc(game.room_ref, { players: arrayRemove(game.nickname) });
         game.unsub();
         game.room_code = null;
         game.nickname = null;
-        deleteGameCookie();
         showPage(menu);
     }
 }
@@ -317,8 +318,9 @@ function setMenuLock(lock) {
     }
 }
 
-function setGame(room_code) {
+function setGame(room_code, nickname) {
     game.room_code = room_code;
+    game.nickname = nickname;
     game.room_ref = doc(roomsRef, room_code);
     game.unsub = onSnapshot(doc(roomsRef, room_code), doc => {
         if (doc.exists()) {
@@ -329,6 +331,7 @@ function setGame(room_code) {
             game.room_code = null;
             game.room_ref = null;
             game.unsub = null;
+            game.nickname = null;
             showPage(menu);
         }
     });
@@ -349,7 +352,7 @@ async function onCreateRoom() {
 
     if (req.success) {
         setGameCookie(req.room_code, menu.nickname.value);
-        setGame(req.room_code);
+        setGame(req.room_code, menu.nickname.value);
         // TODO: This is probably dumb and hacky but i don't care. this fills out the labels
         // for room size and player count etc
         saturateLobby(data);
@@ -369,8 +372,8 @@ async function onJoinRoom() {
     const room_ref = doc(roomsRef, room_code);
     const room_snap = await getDoc(room_ref);
     if (room_snap.exists()) {
-        updateDoc(room_ref, { players: arrayUnion(nickname) })
-        setGame(room_code);
+        await updateDoc(room_ref, { players: arrayUnion(nickname) })
+        setGame(room_code, nickname);
     } else {
         setError("The room you attempted to join does not exist!");
     }
@@ -420,9 +423,8 @@ async function restoreSession() {
     const room_snap = await getDoc(room_ref);
     if (room_snap.exists()) {
         const data = room_snap.data();
-        console.log(data.players.includes(cookie.nickname))
         if (data.players.includes(cookie.nickname)) {
-            setGame(cookie.room_code);
+            setGame(cookie.room_code, cookie.nickname);
         }
     }
 
@@ -444,7 +446,6 @@ function applySnap(snap) {
             break;
         }
     }
-    console.log(snap)
 }
 
 function saturateLobby(snap) {
