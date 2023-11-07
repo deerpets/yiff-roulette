@@ -511,34 +511,57 @@ function saturateLobby(snap) {
     lobby.start_button.classList.toggle("hide", !is_owner); // only the owner can start
 }
 
+function getEpochSeconds() {
+    return Math.floor(new Date().getTime() / 1000);
+}
+
+function formatDuration(time_s) {
+    if (time_s < 0) {
+        return "too late!";
+    } else {
+        let s_left = time_s % 60;
+        if (time_s < 61) {
+            return `${s_left} seconds!!!`;
+        } else {
+            const m_left = Math.floor(time_s / 60);
+            if (s_left < 10) {
+                // if only we had `left-pad` we wouldn't have to do this!!
+                // noo! why!!!
+                s_left = `0${s_left}`;
+            }
+            return `${m_left}:${s_left}`;
+        }
+    }
+}
+
 function saturateSubmission(snap) {
     if (snap.phase != game.phase) {
         showPage(submission);
+    }
+
+    // Manage the timer display. This used to be in the initialization block above,
+    // but it's possible that the page doesn't update between round 1 submission and
+    // round 2 submission. That would change the timer but not the phase, so we need
+    // to reset the timer every snap.
+    {
         // Every second, update the time display:
         clearTimeout(phase_timer);
-        phase_timer = window.setInterval(() => {
-            const time_s = snap.phase_end_time.seconds - Math.floor(new Date().getTime() / 1000);
-            let time_str;
-            if (time_s < 0) {
-                clearTimeout(phase_timer);
-                time_str = "too late!";
-            } else {
-                let s_left = time_s % 60;
-                if (time_s < 61) {
-                    time_str = `${s_left} seconds!!!`;
-                } else {
-                    const m_left = Math.floor(time_s / 60);
-                    if (s_left < 10) {
-                        // if only we had `left-pad` we wouldn't have to do this!!
-                        // noo! why!!!
-                        s_left = `0${s_left}`;
-                    }
-                    time_str = `${m_left}:${s_left}`;
-                }
+        const updateTimestamp = () => {
+            const time_s = snap.phase_end_time.seconds - getEpochSeconds();
+
+            // strictly less than 0 - i want it to display the too late message if
+            // the stop time is in the past.
+            if (time_s < 0 && phase_timer) {
+                clearInterval(phase_timer);
             }
 
-            submission.countdown.innerText = time_str;
-        }, 1000);
+            submission.countdown.innerText = formatDuration(time_s);
+        };
+
+        // setInterval won't call it until 1s passes, so there can be flicker if we don't
+        // do this
+        updateTimestamp();
+        phase_timer = window.setInterval(updateTimestamp, 1000);
     }
 }
 
