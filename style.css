@@ -20,6 +20,7 @@ body {
     color: var(--text-1);
     background: var(--bg-1);
     font-family: Arial, sans-serif;
+    font-size: 16px;
 
     /* The footer should sit no higher than the bottom of the screen */
     min-height: 100vh;

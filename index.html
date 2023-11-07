@@ -9,7 +9,10 @@
 </head>
 
 <body>
-    <header>yiff roulette</header>
+    <header>
+        <h1>yiff roulette</h1>
+        <button id="exit-room" class="hide">exit room</button>
+    </header>
     <details id="error-display" class="no-error">
         <summary>Error</summary>
         <span>Message Here</span>
@@ -34,10 +37,7 @@
         <section id="lobby" class="hide">
             <h2 id="room-code-label">doE69</h2>
             <span id="lobby-player-count">3</span> Players!
-            <ul>
-                <li>deer</li>
-                <li>fox</li>
-                <li>doggy</li>
+            <ul id="player-list">
             </ul>
             <button id="start-game">Start Game</button>
             <div class="hide">Only <b id="room-owner-label"></b> can start the game!</div>

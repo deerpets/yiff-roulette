@@ -5,7 +5,7 @@
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, serverTimestamp, onSnapshot, arrayUnion } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -73,12 +73,27 @@ function getCookie(name) {
     return null;
 }
 
-function setRoomCodeCookie(room_code) {
+function setGameCookie(room_code, nickname) {
     const now = new Date();
     now.setTime(now.getTime() + (24 * 60 * 60 * 1000)); // Set the expiry time to 24 hours from now
     const expires = "expires=" + now.toUTCString();
+    const samesite = "SameSite=Lax";
 
-    document.cookie = `room_code=${room_code};SameSite=Lax;${expires};path=/`;
+    document.cookie = `room_code=${room_code};${samesite};${expires};path=/`;
+    document.cookie = `nickname=${nickname};${samesite};${expires};path=/`;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT;SameSite=Lax;path=/`;
+}
+
+function deleteGameCookie() {
+    deleteCookie("room-code")
+    deleteCookie("nickname")
+}
+
+function getGameCookie() {
+    return { room_code: getCookie("room_code"), nickname: getCookie("nickname") }
 }
 
 async function createRoom(data) {
@@ -128,6 +143,7 @@ let submission;
 let round;
 let game_results;
 let error_display;
+let exit_room_button;
 let errorTimer;
 let all_pages;
 
@@ -170,6 +186,9 @@ function setError(message) {
 
 window.addEventListener("DOMContentLoaded", () => {
     const geid = document.getElementById.bind(document);
+
+    exit_room_button = geid("exit-room");
+
     error_display = geid("error-display");
     error_display.summary = error_display.querySelector("summary");
     error_display.span = error_display.querySelector("span");
@@ -186,6 +205,7 @@ window.addEventListener("DOMContentLoaded", () => {
     lobby.start_button = geid("start-game");
     lobby.room_owner_label = geid("room-owner-label");
     lobby.room_code_label = geid("room-code-label");
+    lobby.player_list = geid("player-list")
     lobby.phase_name = "lobby";
 
     submission = geid("submission");
@@ -204,6 +224,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     all_pages = [menu, lobby, submission, round, round.ballot, round.result, game_results];
 
+    exit_room_button.addEventListener("click", onExitRoom);
     // Don't hide the error message if the user inspects it
     error_display.addEventListener('toggle', () => {
         // Clear the existing timer when the error is viewed
@@ -256,6 +277,16 @@ function onNicknameInput() {
     } else {
         menu.create_button.disabled = true;
         menu.join_button.disabled = true;
+    }
+}
+
+function onExitRoom() {
+    if (game.unsub) {
+        game.unsub();
+        game.room_code = null;
+        game.nickname = null;
+        deleteGameCookie();
+        showPage(menu);
     }
 }
 
@@ -317,7 +348,7 @@ async function onCreateRoom() {
     const req = await createRoom(data);
 
     if (req.success) {
-        setRoomCodeCookie(req.room_code);
+        setGameCookie(req.room_code, menu.nickname.value);
         setGame(req.room_code);
         // TODO: This is probably dumb and hacky but i don't care. this fills out the labels
         // for room size and player count etc
@@ -333,10 +364,12 @@ async function onCreateRoom() {
 async function onJoinRoom() {
     setMenuLock(true);
 
-    const room_code = menu.nickname.value;
+    const nickname = menu.nickname.value;
+    const room_code = menu.code_entry.value;
     const room_ref = doc(roomsRef, room_code);
     const room_snap = await getDoc(room_ref);
     if (room_snap.exists()) {
+        updateDoc(room_ref, { players: arrayUnion(nickname) })
         setGame(room_code);
     } else {
         setError("The room you attempted to join does not exist!");
@@ -349,6 +382,10 @@ function showPage(page) {
     all_pages.forEach(page => {
         page.classList.add("hide");
     });
+
+    // Hide the exit button if we're on the main menu now - but in all
+    // other cases, show it.
+    exit_room_button.classList.toggle("hide", page == menu);
 
     page.classList.remove("hide");
 
@@ -363,20 +400,30 @@ function showPage(page) {
 // Check if the user is already in a room (i.e. their cookie is set to a valid
 // room code). If so, make the UI match the game state.
 async function restoreSession() {
-    const room_code = getCookie("room_code");
-    if (room_code == null) {
+    const cookie = getGameCookie();
+
+    if (cookie.room_code == null || cookie.nickname == null) {
         return;
     }
 
-    if (!isValidRoomCode(room_code)) {
-        setError(`The room code in your cookie, "${room_code}", is not in the correct format. This won't cause any problems for you, but might be a bug in yiff-roulette. Clear your cookies (or wait a day) to remove this message, and <a href="https://github.com/deerpets/yiff-roulette/issues/new">open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
+    if (!isValidRoomCode(cookie.room_code)) {
+        setError(`The room code in your cookie, "${cookie.room_code}", is not in the correct format. This won't cause any problems for you, but might be a bug in yiff roulette. Clear your cookies (or wait a day) to remove this message, and <a href="https://github.com/deerpets/yiff-roulette/issues/new">open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
         return;
     }
 
-    const room_ref = doc(roomsRef, room_code);
+    if (!isNicknameValid(cookie.nickname)) {
+        setError(`The nickname in your cookie, "${cookie.nickname}", is not valid. Join a new game, clear your cookies, or wait a day to remove this message. <a href="https://github.com/deerpets/yiff-roulette/issues/new">Open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
+        return;
+    }
+
+    const room_ref = doc(roomsRef, cookie.room_code);
     const room_snap = await getDoc(room_ref);
     if (room_snap.exists()) {
-        setGame(room_code);
+        const data = room_snap.data();
+        console.log(data.players.includes(cookie.nickname))
+        if (data.players.includes(cookie.nickname)) {
+            setGame(cookie.room_code);
+        }
     }
 
     // Note: The room code cookie is only given 24 hours before it expires, and failing
@@ -412,8 +459,19 @@ function saturateLobby(snap) {
     lobby.player_count_label.innerText = snap.players.length;
     // TODO: sanitize the owner string
     lobby.room_owner_label.innerText = snap.owner;
+
+    snap.players.innerHTML = "";
+    snap.players.forEach(player_name => {
+        const li = document.createElement("li");
+        // TODO: sanitize player names
+        li.innerText = player_name;
+        lobby.player_list.appendChild(li);
+    });
+
+    const is_owner = game.nickname == snap.owner;
+    lobby.room_owner_label.classList.toggle("hide", !is_owner);
 }
 
 window.setError = setError;
 window.getCookie = getCookie;
-window.setRoomCodeCookie = setRoomCodeCookie;
+window.setGameCookie = setGameCookie;
