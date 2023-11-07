@@ -5,7 +5,7 @@
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, updateDoc, getDoc, serverTimestamp, onSnapshot, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, updateDoc, getDoc, serverTimestamp, onSnapshot, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -147,6 +147,7 @@ let exit_room_button;
 let errorTimer;
 let all_pages;
 let phase_timer;
+let owner_timer;
 
 // Give the players 5 minutes to find a submission
 const submission_wait_time_m = 5;
@@ -289,6 +290,9 @@ function onNicknameInput() {
 
 async function onExitRoom() {
     if (game.unsub) {
+        // Unsubscribe immediately to prevent our exit logic from calling event
+        // handlers
+        game.unsub();
         deleteGameCookie();
 
         const snap = await getDoc(game.room_ref);
@@ -296,17 +300,19 @@ async function onExitRoom() {
             // Transfer ownership to someone random who isn't the owner:
             const new_owner = snap.data().players.find(name => name != game.nickname);
             if (new_owner) {
-                await updateDoc(game.room_ref, { owner: new_owner });
+                await updateDoc(game.room_ref, { owner: new_owner, players: arrayRemove(game.nickname) });
+            } else {
+                // If new_owner is undefined, then we're the only player.
+                // Delete the room from the server and let cleanup continue
+                await deleteDoc(game.room_ref);
             }
-            // If new_owner is undefined, then we're the only player and so cleanup can continue
         } else {
             // If we can't even read the gamestate, the game is corrupt and we
             // just leave.
             setError(`Failed to transfer room ownership - The game you were playing in might now be corrupt. This could be caused by network issues or a bug. <a href="https://github.com/deerpets/yiff-roulette/issues/new">Open an issue on yiff-roulette's GitHub</a> if you believe this is a bug.`);
         }
 
-        await updateDoc(game.room_ref, { players: arrayRemove(game.nickname) });
-        game.unsub();
+        game.unsub = null;
         game.room_code = null;
         game.nickname = null;
         showPage(menu);
@@ -467,6 +473,11 @@ async function onStartGame() {
 
 // Sets the gamestate based on the contents of a room snap.
 function applySnap(snap) {
+    // If we are now the owner, make sure the owner tasks are running
+    if (snap.owner == game.nickname && owner_timer == null) {
+        owner_timer = window.setInterval(doOwnerTasks, 1000);
+    }
+
     switch (snap.phase) {
         case "lobby": {
             saturateLobby(snap);
@@ -563,6 +574,10 @@ function saturateSubmission(snap) {
         updateTimestamp();
         phase_timer = window.setInterval(updateTimestamp, 1000);
     }
+}
+
+function doOwnerTasks() {
+    console.log("owner owner owner")
 }
 
 window.setError = setError;
