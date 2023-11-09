@@ -255,7 +255,7 @@
     {:else if game_data.room_data.phase == GameState.Lobby}
         <RouletteLobby {game_data} />
     {:else if game_data.room_data.phase == GameState.Submission}
-        <RouletteSubmission {game_data} />
+        <RouletteSubmission {game_data} {setError} />
     {:else if game_data.room_data.phase == GameState.Round}
         <RouletteRound {game_data} />
     {:else if game_data.room_data.phase == GameState.Results}

@@ -61,6 +61,20 @@ input {
     font-size: 1em;
 }
 
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #2a2a3a;
+    background-color: #1a1a2e;
+    color: #d1d1d1;
+    border-radius: 5px;
+}
+
+input:invalid {
+    border: 1px var(--text-error) solid;
+}
+
 button {
     font-size: 1em;
     font-weight: bold;
@@ -126,16 +140,6 @@ section {
 label {
     display: block;
     margin-top: 10px;
-}
-
-input[type="text"] {
-    width: 100%;
-    padding: 8px;
-    margin-top: 5px;
-    border: 1px solid #2a2a3a;
-    background-color: #1a1a2e;
-    color: #d1d1d1;
-    border-radius: 5px;
 }
 
 button {

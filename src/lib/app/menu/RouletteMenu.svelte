@@ -94,10 +94,12 @@
         const data = {
             players: [nickname],
             phase: GameState.Lobby,
-            phase_end_time: 0,
+            phase_end_time: new Date(),
             owner: nickname,
             owner_timer: 0,
             created_time: serverTimestamp(),
+            submissions: new Map(),
+            votes: new Map(),
         };
 
         // Attempt to create the room
