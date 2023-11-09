@@ -1,0 +1,170 @@
+:root {
+    /* text-n is the nth faded out text color (1 is normal, 2 is faded, ...) */
+    --text-1: #d1d1d1;
+
+    --text-error: red;
+
+    /* bg-n is the nth background color for nesting (1 is page bg, 2 is panel, 3 is panel in panel, ...) */
+    --bg-1: #1a1a2e;
+
+    --bg-selected: #1b67dd;
+
+    --pad: 0.4rem;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    color: var(--text-1);
+    background: var(--bg-1);
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+
+    /* The footer should sit no higher than the bottom of the screen */
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    /* height: 100vh; */
+    /* align-items: center; */
+    /* justify-content: center; */
+    padding: var(--pad);
+    margin: 0;
+    /* padding: 0; */
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+input[type="radio"] {
+    display: none;
+}
+
+input[type="radio"][name="vote-choice"]:checked+label {
+    background: var(--bg-selected);
+}
+
+input {
+    font-size: 1em;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #2a2a3a;
+    background-color: #1a1a2e;
+    color: #d1d1d1;
+    border-radius: 5px;
+}
+
+input:invalid {
+    border: 1px var(--text-error) solid;
+}
+
+button {
+    font-size: 1em;
+    font-weight: bold;
+}
+
+input[type="text"].invalid {
+    border: 1px var(--text-error) solid;
+}
+
+.hide {
+    display: none;
+}
+
+section {
+    background: #1c3780;
+}
+
+#error-display {
+    height: auto;
+    padding: var(--pad);
+    transition: opacity 1s;
+    color: var(--text-error);
+}
+
+#error-display:not([open]) {
+    overflow: hidden;
+}
+
+#error-display summary {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: bold;
+}
+
+#error-display span {
+    /* Kind of an abuse of a span, but.. :) */
+    display: block;
+
+    /* Needed to indicate that the error label is not the same paragraph */
+    margin-top: var(--pad);
+}
+
+.no-error {
+    /* Keeps the size of the box without making it visible or interactable */
+    opacity: 0;
+    user-select: none;
+    cursor: inherit;
+}
+
+/* old css below */
+
+#inputForm,
+#results {
+    background-color: #0a0a1a;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    max-width: 500px;
+    width: 100%;
+}
+
+label {
+    display: block;
+    margin-top: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    margin-top: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button[disabled] {
+    background-color: #002488;
+}
+
+p {
+    margin-top: 20px;
+}
+
+#results {
+    display: none;
+}
