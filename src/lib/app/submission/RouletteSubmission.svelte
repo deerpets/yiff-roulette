@@ -57,10 +57,10 @@
         };
     }
 
-    function onSubmit() {
+    async function onSubmit() {
         const parsed = parseE6URL(entered_url);
         if (parsed.success && game_data.room_ref) {
-            updateDoc(game_data.room_ref, {
+            await updateDoc(game_data.room_ref, {
                 [`submissions.${game_data.nickname}`]: parsed.id,
             });
 
@@ -74,12 +74,15 @@
                 const phase_end_time: number =
                     game_data.room_data.phase_end_time.getTime() / 1000;
                 const phase_end_time_from_now = phase_end_time - now_s;
+                console.log(phase_end_time_from_now);
                 if (phase_end_time_from_now > 10) {
                     let new_phase_end = new Date();
                     new_phase_end.setSeconds(new_phase_end.getSeconds() + 10);
+                    console.log(new_phase_end);
                     updateDoc(game_data.room_ref, {
                         phase_end_time: new_phase_end,
                     });
+                    updateCountdown();
                 }
             }
         } else {

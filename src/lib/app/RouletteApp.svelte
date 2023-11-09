@@ -158,7 +158,7 @@
             phase: snap.phase,
             phase_end_time,
             created_time: snap.created_time,
-            submissions: snap.submissions,
+            submissions: new Map(Object.entries(snap.submissions)),
             votes: snap.votes,
         };
     }
