@@ -146,12 +146,17 @@
             );
         }
 
+        let phase_end_time = snap.phase_end_time;
+        if (phase_end_time) {
+            phase_end_time = new Date(phase_end_time.seconds * 1000);
+        }
+
         game_data.room_data = {
             players: snap.players,
             owner: snap.owner,
             owner_timer: snap.owner_timer,
             phase: snap.phase,
-            phase_end_time: snap.phase_end_time,
+            phase_end_time,
             created_time: snap.created_time,
             submissions: snap.submissions,
             votes: snap.votes,

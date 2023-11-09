@@ -76,8 +76,7 @@
                 result.room_code = room_code;
                 return result;
             } catch (error) {
-                result.message =
-                    "Failed to create room despite having an available room code.";
+                result.message = `Failed to create room despite having an available room code. (${error})`;
                 return result;
             }
         }
@@ -98,8 +97,12 @@
             owner: nickname,
             owner_timer: 0,
             created_time: serverTimestamp(),
-            submissions: new Map(),
-            votes: new Map(),
+            // TODO: These SHOULD be here, but setdoc rejects custom map objects and will poop the bed.
+            // submissions: new Map(),
+            // votes: new Map(),
+            // This is type violating but works
+            submissions: {},
+            votes: {},
         };
 
         // Attempt to create the room

@@ -98,6 +98,7 @@
     const url_regex: RegExp =
         /^(https?:\/\/)?e621.net\/posts\/(?<id>\d+)(\?.*)?$/;
 
+    console.log(game_data.room_data.phase_end_time);
     let remaining_seconds =
         game_data.room_data.phase_end_time.getSeconds() - getEpochSeconds();
 
