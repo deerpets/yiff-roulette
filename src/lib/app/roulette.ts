@@ -13,29 +13,22 @@ export enum GameState {
 }
 
 export class GameData {
-    room_code: string = "ASDFG" //""
-    nickname: string = "test" //""
+    room_code: string = ""
+    nickname: string = ""
     room_ref: DocumentReference<DocumentData, DocumentData> | undefined
     room_data: RoomData = new RoomData()
     unsub: Unsubscribe | undefined
 }
 
-const test_players = ["test", "test2"]
-const test_owner = "test"
-let test_time = new Date();
-test_time.setSeconds(test_time.getSeconds() + 10);
-let test_submissions = new Map()
-test_submissions.set("test", 886)
-test_submissions.set("test2", 4654)
 /// Class representing RoomData
 export class RoomData {
-    players: string[] = test_players //[]
-    owner: string = test_owner //""
+    players: string[] = []
+    owner: string = ""
     owner_timer: number = 0
-    phase: GameState = GameState.Round //GameState.Menu
-    phase_end_time: Date = test_time // new Date()
+    phase: GameState = GameState.Menu
+    phase_end_time: Date = new Date()
     created_time: FieldValue = serverTimestamp()
-    submissions: Map<string, number> = test_submissions //new Map()
+    submissions: Map<string, number> = new Map()
     votes: Map<number, Map<string, string>> = new Map()
 }
 
