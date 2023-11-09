@@ -94,6 +94,7 @@
 
     let entered_url: string = "";
     let valid_url: boolean = false;
+    let phase_timer: number | undefined = undefined;
 
     const url_regex: RegExp =
         /^(https?:\/\/)?e621.net\/posts\/(?<id>\d+)(\?.*)?$/;
@@ -102,14 +103,22 @@
     let remaining_seconds =
         game_data.room_data.phase_end_time.getSeconds() - getEpochSeconds();
 
-    function setPhaseTimer() {
-        let phase_timer = window.setInterval(() => {
-            remaining_seconds =
-                game_data.room_data.phase_end_time.getSeconds() -
-                getEpochSeconds();
-        }, 1000);
+    function updateCountdown() {
+        remaining_seconds =
+            game_data.room_data.phase_end_time.getTime() / 1000 -
+            getEpochSeconds();
     }
+
+    function setPhaseTimer() {
+        if (phase_timer != undefined) {
+            clearInterval(phase_timer);
+        }
+
+        phase_timer = window.setInterval(updateCountdown, 1000);
+    }
+
     onMount(setPhaseTimer);
+    onMount(updateCountdown);
 </script>
 
 <h1 id="submission-countdown">

@@ -76,6 +76,8 @@ export function getEpochSeconds() {
 }
 
 export function formatDuration(time_s: number) {
+    time_s = Math.round(time_s);
+
     if (time_s < 0) {
         return "too late!";
     } else {
