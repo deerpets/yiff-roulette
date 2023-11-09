@@ -92,7 +92,6 @@
 
     function onLinkEntryInput() {
         valid_url = parseE6URL(entered_url).success;
-        console.log(valid_url);
     }
 
     let entered_url: string = "";
