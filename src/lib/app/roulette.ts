@@ -28,6 +28,8 @@ export class RoomData {
     phase: GameState = GameState.Menu
     phase_end_time: any
     created_time: FieldValue = serverTimestamp()
+    submissions: Map<string, number> = new Map()
+    votes: Array<Map<string, string>> = []
 }
 
 /// Fetch a cookie by name (https://stackoverflow.com/a/49224652)
