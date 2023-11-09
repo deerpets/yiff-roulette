@@ -13,23 +13,30 @@ export enum GameState {
 }
 
 export class GameData {
-    room_code: string = ""
-    nickname: string = ""
+    room_code: string = "ASDFG" //""
+    nickname: string = "test" //""
     room_ref: DocumentReference<DocumentData, DocumentData> | undefined
     room_data: RoomData = new RoomData()
     unsub: Unsubscribe | undefined
 }
 
+const test_players = ["test", "test2"]
+const test_owner = "test"
+let test_time = new Date();
+test_time.setSeconds(test_time.getSeconds() + 10);
+let test_submissions = new Map()
+test_submissions.set("test", 886)
+test_submissions.set("test2", 4654)
 /// Class representing RoomData
 export class RoomData {
-    players: string[] = []
-    owner: string = ""
+    players: string[] = test_players //[]
+    owner: string = test_owner //""
     owner_timer: number = 0
-    phase: GameState = GameState.Menu
-    phase_end_time: any
+    phase: GameState = GameState.Round //GameState.Menu
+    phase_end_time: Date = test_time // new Date()
     created_time: FieldValue = serverTimestamp()
-    submissions: Map<string, number> = new Map()
-    votes: Array<Map<string, string>> = []
+    submissions: Map<string, number> = test_submissions //new Map()
+    votes: Map<number, Map<string, string>> = new Map()
 }
 
 /// Fetch a cookie by name (https://stackoverflow.com/a/49224652)
@@ -73,4 +80,23 @@ export function getGameCookie() {
 
 export function getEpochSeconds() {
     return Math.floor(new Date().getTime() / 1000);
+}
+
+export function formatDuration(time_s: number) {
+    if (time_s < 0) {
+        return "too late!";
+    } else {
+        let s_left: string = (time_s % 60).toString();
+        if (time_s < 61) {
+            return `${s_left} seconds!!!`;
+        } else {
+            const m_left = Math.floor(time_s / 60);
+            if (+s_left < 10) {
+                // if only we had `left-pad` we wouldn't have to do this!!
+                // noo! why!!!
+                s_left = `0${s_left}`;
+            }
+            return `${m_left}:${s_left}`;
+        }
+    }
 }

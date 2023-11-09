@@ -92,7 +92,7 @@
             case GameState.Submission: {
                 // If it's time to go to the next phase, do so:
                 const time_s =
-                    game_data.room_data.phase_end_time.seconds -
+                    game_data.room_data.phase_end_time.getSeconds() -
                     getEpochSeconds();
                 if (time_s <= 0) {
                     let curr_time = new Date();
@@ -108,6 +108,24 @@
                 }
                 break;
             }
+            case GameState.Round:
+                // Handle round transitions
+                const time_s =
+                    game_data.room_data.phase_end_time.getSeconds() -
+                    getEpochSeconds();
+                if (time_s <= 0) {
+                    let curr_time = new Date();
+                    game_data.room_data.phase_end_time.setMinutes(
+                        curr_time.getMinutes() + ballot_wait_time_m
+                    );
+                    // Only update if we have a valid reference
+                    if (game_data.room_ref instanceof DocumentReference) {
+                        updateDoc(game_data.room_ref, {
+                            room_data: game_data.room_data,
+                        });
+                    }
+                }
+                break;
             default: {
                 // This case raises an error in applySnap, don't bother reporting it here
                 break;
@@ -135,6 +153,8 @@
             phase: snap.phase,
             phase_end_time: snap.phase_end_time,
             created_time: snap.created_time,
+            submissions: snap.submissions,
+            votes: snap.votes,
         };
     }
 
@@ -237,7 +257,7 @@
     {:else if game_data.room_data.phase == GameState.Submission}
         <RouletteSubmission {game_data} />
     {:else if game_data.room_data.phase == GameState.Round}
-        <RouletteRound />
+        <RouletteRound {game_data} />
     {:else if game_data.room_data.phase == GameState.Results}
         <RouletteResults />
     {/if}
