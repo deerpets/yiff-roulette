@@ -12,7 +12,7 @@
     import RouletteMenu from "./menu/RouletteMenu.svelte";
     import RouletteLobby from "./lobby/RouletteLobby.svelte";
     import RouletteSubmission from "./submission/RouletteSubmission.svelte";
-    import RouletteRound from "./round/RouletteRound.svelte";
+    import RouletteVoting from "./voting/RouletteVoting.svelte";
     import RouletteResults from "./results/RouletteResults.svelte";
 
     // Firebase config
@@ -67,6 +67,15 @@
         }, 30000); // 30 seconds
     }
 
+    // Durstenfeld Shuffle
+    function shuffleArray(array: Array<any>) {
+        for (var i = array.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            var temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+    }
     /// Valid room phases
     /// Intended transitions are:
     /// 1. Menu (start) -> Lobby (join or create)
@@ -92,37 +101,64 @@
             case GameState.Submission: {
                 // If it's time to go to the next phase, do so:
                 const time_s =
-                    game_data.room_data.phase_end_time.getSeconds() -
+                    game_data.room_data.phase_end_time.getTime() / 1000 -
                     getEpochSeconds();
                 if (time_s <= 0) {
-                    let curr_time = new Date();
-                    game_data.room_data.phase_end_time.setMinutes(
-                        curr_time.getMinutes() + ballot_wait_time_m
+                    let phase_end_time = new Date();
+                    phase_end_time.setMinutes(
+                        phase_end_time.getMinutes() + ballot_wait_time_m
                     );
                     // Only update if we have a valid reference
                     if (game_data.room_ref instanceof DocumentReference) {
                         updateDoc(game_data.room_ref, {
-                            room_data: game_data.room_data,
+                            phase: GameState.Voting,
+                            phase_end_time,
                         });
                     }
                 }
                 break;
             }
-            case GameState.Round:
-                // Handle round transitions
+            case GameState.Voting:
+                // Either progress to the next round of voting or progress to the
+                // results page
                 const time_s =
-                    game_data.room_data.phase_end_time.getSeconds() -
+                    game_data.room_data.phase_end_time.getTime() / 1000 -
                     getEpochSeconds();
                 if (time_s <= 0) {
-                    let curr_time = new Date();
-                    game_data.room_data.phase_end_time.setMinutes(
-                        curr_time.getMinutes() + ballot_wait_time_m
-                    );
-                    // Only update if we have a valid reference
                     if (game_data.room_ref instanceof DocumentReference) {
-                        updateDoc(game_data.room_ref, {
-                            room_data: game_data.room_data,
-                        });
+                        const next_voting_round =
+                            game_data.room_data.voting_round + 1;
+                        if (
+                            next_voting_round <
+                            game_data.room_data.submissions.size
+                        ) {
+                            let phase_end_time = new Date();
+                            phase_end_time.setMinutes(
+                                phase_end_time.getMinutes() + ballot_wait_time_m
+                            );
+
+                            updateDoc(game_data.room_ref, {
+                                voting_round: next_voting_round,
+                                phase_end_time,
+                            });
+                        } else {
+                            // The ordering of the images displayed in the voting sequence is
+                            // monotonic along with the player array. We shuffle it each round
+                            // to prevent people from memorizing that the first step is always player A
+                            // etc. This happens after each full voting round to prevent cheating in the
+                            // next round
+                            shuffleArray(game_data.room_data.players);
+                            let phase_end_time = new Date();
+                            phase_end_time.setMinutes(
+                                phase_end_time.getMinutes() + ballot_wait_time_m
+                            );
+                            console.log(game_data.room_data.players);
+                            updateDoc(game_data.room_ref, {
+                                phase: GameState.Results,
+                                phase_end_time,
+                                players: game_data.room_data.players,
+                            });
+                        }
                     }
                 }
                 break;
@@ -138,12 +174,9 @@
         // If we are now the owner, make sure the owner tasks are running
         if (
             snap.owner == game_data.nickname &&
-            game_data.room_data.owner_timer == null
+            game_data.owner_timer == undefined
         ) {
-            game_data.room_data.owner_timer = window.setInterval(
-                doOwnerTasks,
-                1000
-            );
+            game_data.owner_timer = window.setInterval(doOwnerTasks, 1000);
         }
 
         let phase_end_time = snap.phase_end_time;
@@ -151,15 +184,30 @@
             phase_end_time = new Date(phase_end_time.seconds * 1000);
         }
 
+        // type systems are only good if they're there from the language's
+        // conception
+        let votes: Map<number, Map<string, string>> = new Map();
+        if (snap.votes) {
+            Object.entries(snap.votes).forEach(([k, v], _) => {
+                let round_k_votes: Map<string, string> = new Map();
+                if (v instanceof Object) {
+                    Object.entries(v).forEach(([nickname, target], _) => {
+                        round_k_votes.set(nickname, target.toString());
+                    });
+                    votes.set(parseInt(k), new Map(round_k_votes));
+                }
+            });
+        }
+
         game_data.room_data = {
             players: snap.players,
             owner: snap.owner,
-            owner_timer: snap.owner_timer,
             phase: snap.phase,
             phase_end_time,
             created_time: snap.created_time,
             submissions: new Map(Object.entries(snap.submissions)),
-            votes: snap.votes,
+            votes,
+            voting_round: snap.voting_round,
         };
     }
 
@@ -218,6 +266,8 @@
                 }
             }
             game_data.room_data.phase = GameState.Menu;
+            window.clearInterval(game_data.owner_timer);
+            game_data.owner_timer = undefined;
         }
     }
 
@@ -261,8 +311,8 @@
         <RouletteLobby {game_data} />
     {:else if game_data.room_data.phase == GameState.Submission}
         <RouletteSubmission {game_data} {setError} />
-    {:else if game_data.room_data.phase == GameState.Round}
-        <RouletteRound {game_data} />
+    {:else if game_data.room_data.phase == GameState.Voting}
+        <RouletteVoting {game_data} />
     {:else if game_data.room_data.phase == GameState.Results}
         <RouletteResults />
     {/if}

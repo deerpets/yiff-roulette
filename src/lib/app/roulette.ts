@@ -8,7 +8,7 @@ export enum GameState {
     Menu,
     Lobby,
     Submission,
-    Round,
+    Voting,
     Results,
 }
 
@@ -18,18 +18,20 @@ export class GameData {
     room_ref: DocumentReference<DocumentData, DocumentData> | undefined
     room_data: RoomData = new RoomData()
     unsub: Unsubscribe | undefined
+    owner_timer: number | undefined
+    image_cache: Map<number, Image>
 }
 
 /// Class representing RoomData
 export class RoomData {
     players: string[] = []
     owner: string = ""
-    owner_timer: number = 0
     phase: GameState = GameState.Menu
     phase_end_time: Date = new Date()
     created_time: FieldValue = serverTimestamp()
     submissions: Map<string, number> = new Map()
     votes: Map<number, Map<string, string>> = new Map()
+    voting_round: number = 0
 }
 
 /// Fetch a cookie by name (https://stackoverflow.com/a/49224652)

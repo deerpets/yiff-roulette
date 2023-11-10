@@ -103,6 +103,7 @@
             // This is type violating but works
             submissions: {},
             votes: {},
+            voting_round: 0,
         };
 
         // Attempt to create the room
