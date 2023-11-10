@@ -62,25 +62,30 @@
             });
     }
 
-    $: showImage(voting_round);
+    $: {
+        showImage(voting_round);
+        // Whenever the voting round changes (i.e. like it does here) we want to deselect the radio buttons
+        player_vote = "";
+    }
     let submission_url = "";
 
-    let round_votes = game_data.room_data.votes.get(
+    $: round_votes = game_data.room_data.votes.get(
         game_data.room_data.voting_round
     );
-    function calculatePlayerVotes() {
-        players_voted = 0;
-        if (round_votes instanceof Map) {
-            round_votes.forEach((_player, guess) => {
+    $: players_voted = countVotes(round_votes);
+    function countVotes(votes: Map<string, string> | undefined) {
+        let count = 0;
+        if (votes instanceof Map) {
+            votes.forEach((_player, guess) => {
                 if (guess != "") {
-                    players_voted += 1;
+                    count += 1;
                 }
             });
         }
+        return count;
     }
 
     async function updatePlayerVote() {
-        console.log("hi");
         if (game_data.room_ref instanceof DocumentReference) {
             await updateDoc(game_data.room_ref, {
                 [`votes.${game_data.room_data.voting_round}.${game_data.nickname}`]:
@@ -106,7 +111,6 @@
                 }
             }
         }
-        calculatePlayerVotes();
     }
 </script>
 
