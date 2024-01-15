@@ -314,7 +314,7 @@
     {:else if game_data.room_data.phase == GameState.Voting}
         <RouletteVoting {game_data} />
     {:else if game_data.room_data.phase == GameState.Results}
-        <RouletteResults />
+        <RouletteResults {game_data} />
     {/if}
 </main>
 

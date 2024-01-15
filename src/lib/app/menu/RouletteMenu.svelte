@@ -65,6 +65,7 @@
                     continue; // Skip to the next iteration and try a new room code.
                 }
             } catch (error) {
+                console.log(error);
                 result.message =
                     "Failed to check if a room code was already used.";
                 return result;

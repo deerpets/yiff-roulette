@@ -19,7 +19,7 @@ export class GameData {
     room_data: RoomData = new RoomData()
     unsub: Unsubscribe | undefined
     owner_timer: number | undefined
-    image_cache: Map<number, Image>
+    image_cache: Map<number, HTMLImageElement> = new Map()
 }
 
 /// Class representing RoomData

@@ -51,10 +51,13 @@
         )
             .then((response) => response.json())
             .then((data) => {
-                // Process and display the data in your app
                 console.log("data from e6:");
                 console.log(data);
-                submission_url = data.post.file.url;
+                // submission_url = data.post.file.url;
+                current_image = new Image;
+                current_image.src = data.post.file.url;
+                game_data.image_cache.set(round_id, current_image);
+
             })
             .catch((error) => {
                 // Handle any errors
@@ -67,7 +70,8 @@
         // Whenever the voting round changes (i.e. like it does here) we want to deselect the radio buttons
         player_vote = "";
     }
-    let submission_url = "";
+    // let submission_url = "";
+    let current_image = new Image;
 
     $: round_votes = game_data.room_data.votes.get(
         game_data.room_data.voting_round
@@ -120,7 +124,7 @@
     <h2 class="vote-counter">
         {players_voted}/{game_data.room_data.players.length} players have voted
     </h2>
-    <img src={submission_url} alt="some (probably) hot yiff" height="400" />
+    <img src={current_image.src} alt="some (probably) hot yiff" height="400" />
     {#each game_data.room_data.players as player}
         <input
             type="radio"
