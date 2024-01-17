@@ -3,6 +3,7 @@
         GameData,
         GameState,
         ballot_wait_time_m,
+        result_page_time_s,
         deleteGameCookie,
         getCookie,
         getEpochSeconds,
@@ -118,7 +119,7 @@
                 }
                 break;
             }
-            case GameState.Voting:
+            case GameState.Voting: {
                 // Either progress to the next round of voting or progress to the
                 // results page
                 const time_s =
@@ -128,6 +129,7 @@
                     if (game_data.room_ref instanceof DocumentReference) {
                         const next_voting_round =
                             game_data.room_data.voting_round + 1;
+                        
                         if (
                             next_voting_round <
                             game_data.room_data.submissions.size
@@ -142,26 +144,65 @@
                                 phase_end_time,
                             });
                         } else {
+                            let phase_end_time = new Date();
+                            phase_end_time.setSeconds(
+                                phase_end_time.getSeconds() + result_page_time_s
+                            );
+                            // Go to the results phase
+                            updateDoc(game_data.room_ref, {
+                                phase: GameState.Results,
+                                phase_end_time,
+                                players: game_data.room_data.players,
+                                voting_round: 0 // The voting round counter is used for pagination in the next phase too
+                            });
+                        }
+                    }
+                }
+                break;
+            }
+            case GameState.Results: {
+                // Page through the user submissions one by one. When we run out of results to show,
+                // the game starts over (back to the lobby page where the owner can start the game / pick a tag)
+                const time_s =
+                    game_data.room_data.phase_end_time.getTime() / 1000 -
+                    getEpochSeconds();
+                if (time_s <= 0) {
+                    if (game_data.room_ref instanceof DocumentReference) {
+                        const next_voting_round =
+                            game_data.room_data.voting_round + 1;
+                        
+                        let phase_end_time = new Date();
+                        phase_end_time.setSeconds(
+                            phase_end_time.getSeconds() + result_page_time_s
+                        );
+                        
+                        if (
+                            next_voting_round <
+                            game_data.room_data.submissions.size
+                        ) {
+                            updateDoc(game_data.room_ref, {
+                                voting_round: next_voting_round,
+                                phase_end_time,
+                            });
+                        } else {
                             // The ordering of the images displayed in the voting sequence is
                             // monotonic along with the player array. We shuffle it each round
                             // to prevent people from memorizing that the first step is always player A
                             // etc. This happens after each full voting round to prevent cheating in the
                             // next round
                             shuffleArray(game_data.room_data.players);
-                            let phase_end_time = new Date();
-                            phase_end_time.setMinutes(
-                                phase_end_time.getMinutes() + ballot_wait_time_m
-                            );
-                            console.log(game_data.room_data.players);
                             updateDoc(game_data.room_ref, {
-                                phase: GameState.Results,
+                                phase: GameState.Lobby,
                                 phase_end_time,
                                 players: game_data.room_data.players,
+                                voting_round: 0
+                                // TODO: Reset all the boring variables here, increment user gamewide scores
                             });
                         }
                     }
                 }
                 break;
+            }
             default: {
                 // This case raises an error in applySnap, don't bother reporting it here
                 break;

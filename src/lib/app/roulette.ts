@@ -3,6 +3,7 @@ import { DocumentReference, FieldValue, collection, serverTimestamp, type Docume
 
 export const submission_wait_time_m = 5;
 export const ballot_wait_time_m = 3;
+export const result_page_time_s = 10;
 
 export enum GameState {
     Menu,
@@ -31,7 +32,7 @@ export class RoomData {
     created_time: FieldValue = serverTimestamp()
     submissions: Map<string, number> = new Map()
     votes: Map<number, Map<string, string>> = new Map()
-    voting_round: number = 0
+    voting_round: number = 0 // Used both to vote on submissions and to see each page of results afterwards! rename if appropriate
 }
 
 /// Fetch a cookie by name (https://stackoverflow.com/a/49224652)
