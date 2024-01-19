@@ -1,11 +1,13 @@
 :root {
     /* text-n is the nth faded out text color (1 is normal, 2 is faded, ...) */
     --text-1: #d1d1d1;
+    --text-2: rgb(159, 151, 187);
 
     --text-error: red;
 
     /* bg-n is the nth background color for nesting (1 is page bg, 2 is panel, 3 is panel in panel, ...) */
     --bg-1: #1a1a2e;
+    --bg-2: #303059;
 
     --bg-selected: #1b67dd;
 
@@ -21,6 +23,7 @@ body {
     background: var(--bg-1);
     font-family: Arial, sans-serif;
     font-size: 16px;
+    width: 100vw;
 
     /* The footer should sit no higher than the bottom of the screen */
     min-height: 100vh;
@@ -33,7 +36,7 @@ body {
     /* justify-content: center; */
     padding: var(--pad);
     margin: 0;
-    /* padding: 0; */
+    padding: 1em;
 }
 
 header {
@@ -49,8 +52,25 @@ main {
     justify-content: center;
 }
 
+@media screen and (min-width: 7in) {
+    main {
+        width: 7in;
+        margin: 0 auto;
+    }
+}
+
 input[type="radio"] {
     display: none;
+}
+
+input[type="radio"][name="vote-choice"]+label {
+    background: var(--bg-2);
+    padding: calc(var(--pad) * 2);
+    margin-bottom: var(--pad);
+    border-radius: var(--pad);
+    text-align: center;
+    font-weight: bold;
+    color: white; /* this is sad but it looks weird otherwise */
 }
 
 input[type="radio"][name="vote-choice"]:checked+label {
@@ -125,6 +145,29 @@ section {
     cursor: inherit;
 }
 
+h1.countdown {
+    color: var(--text-2);
+    font-size: 1.5em;
+    margin-top: 0.2em;
+}
+
+h1.round-counter {
+    margin-bottom: 0;
+}
+
+#title {
+    margin: 0;
+}
+
+#image-container {
+    height: 50svh;
+    display: flex;
+    justify-content: center;
+}
+
+#image-container img {
+    height: 100%;
+}
 /* old css below */
 
 #inputForm,
